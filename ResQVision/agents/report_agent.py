@@ -39,6 +39,7 @@ class ReportAgent:
         resources: dict,
         confidence_score: float = 0.0,
         flood_risk: bool = False,
+        fire_risk: bool = False,
         micro_motion_confidence: float = 0.0,
         breathing_confidence: float = 0.0,
     ) -> str:
@@ -73,6 +74,7 @@ class ReportAgent:
             f"  Risk Level             : {risk_level}",
             f"  Risk Score             : {risk_score}/100",
             f"  Flood Risk             : {'YES ⚠' if flood_risk else 'NO'}",
+            f"  Fire Risk              : {'YES 🔥' if fire_risk else 'NO'}",
             f"  Micro-Motion Confidence: {micro_motion_confidence:.1%}",
             f"  Breathing Confidence   : {breathing_confidence:.1%}",
             "",
@@ -98,6 +100,7 @@ class ReportAgent:
             f"  Rescue Teams    : {resources.get('rescue_teams', 0)}",
             f"  Medical Units   : {resources.get('medical_units', 0)}",
             f"  Helicopters     : {resources.get('helicopters', 0)}",
+            f"  Fire Engines    : {resources.get('fire_engines', 0)}",
             f"  Supply Trucks   : {resources.get('supply_trucks', 0)}",
             f"  Total Personnel : {resources.get('total_personnel', 0)}",
             "",

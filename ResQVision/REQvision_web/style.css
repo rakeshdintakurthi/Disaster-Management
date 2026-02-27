@@ -1,0 +1,205 @@
+/* Modern Reset & Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', -apple-system, sans-serif;
+}
+
+body {
+    background-color: #0F172A; /* Slate 900 */
+    color: #F8FAFC;
+    overflow: hidden; /* App-like feel */
+}
+
+/* Map Container */
+#map {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1; /* Lowest layer */
+}
+
+/* Glassmorphism Command Panel */
+.command-panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 1000; /* Above Leaflet map */
+    
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 24px;
+    width: 340px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(to right, #38BDF8, #818CF8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 4px;
+}
+
+.header p {
+    font-size: 0.85rem;
+    color: #94A3B8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.controls button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: #CBD5E1;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.controls button .icon {
+    font-size: 1.2rem;
+}
+
+.controls button:hover {
+    background: rgba(51, 65, 85, 0.9);
+    color: #FFF;
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.controls button.active {
+    background: rgba(56, 189, 248, 0.1);
+    border-color: #38BDF8;
+    color: #38BDF8;
+}
+
+.controls button.heatmap-toggle.active {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #EF4444;
+    color: #EF4444;
+}
+
+/* Dynamic Critical Alert Box */
+.alert {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: rgba(220, 38, 38, 0.9);
+    border: 1px solid #F87171;
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+    animation: flash 2s infinite ease-in-out;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.alert.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+}
+
+.alert-icon {
+    font-size: 1.8rem;
+}
+
+.alert-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.alert-content strong {
+    font-size: 0.9rem;
+    color: #FFF;
+    letter-spacing: 0.5px;
+}
+
+.alert-content span {
+    font-size: 0.8rem;
+    color: #FECACA;
+}
+
+/* Leaflet Popup Styling Override to look modern */
+.leaflet-popup-content-wrapper {
+    background: #1E293B;
+    color: #F8FAFC;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.leaflet-popup-tip {
+    background: #1E293B;
+}
+
+.custom-popup {
+    padding: 5px;
+}
+
+.custom-popup h3 {
+    margin: 0 0 8px 0;
+    font-size: 1rem;
+    color: #38BDF8;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 6px;
+}
+
+.custom-popup p {
+    margin: 4px 0;
+    font-size: 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.custom-popup span.badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge.low { background: #059669; color: #D1FAE5; }
+.badge.medium { background: #D97706; color: #FEF3C7; }
+.badge.high { background: #DC2626; color: #FEE2E2; }
+
+@keyframes flash {
+    0%, 100% { box-shadow: 0 0 10px rgba(220, 38, 38, 0.4); }
+    50% { box-shadow: 0 0 25px rgba(220, 38, 38, 0.8); border-color: #FFF; }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .command-panel {
+        top: auto;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        padding: 16px;
+    }
+}

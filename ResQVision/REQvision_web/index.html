@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REQvision - Web Dashboard</title>
+    <!-- Modern Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- UI Overlay (Glassmorphism) -->
+    <div class="command-panel">
+        <div class="header">
+            <h2>REQvision</h2>
+            <p>Disaster & Crowd Intelligence</p>
+        </div>
+        
+        <div class="controls">
+            <button id="btn-normal" class="active">
+                <span class="icon">🗺️</span> Normal View
+            </button>
+            <button id="btn-satellite">
+                <span class="icon">🛰️</span> Satellite View
+            </button>
+            <button id="btn-heatmap" class="active heatmap-toggle">
+                <span class="icon">🔥</span> Heatmap ON
+            </button>
+        </div>
+
+        <!-- Dynamic Critical Alert Box -->
+        <div id="alert-box" class="alert hidden">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-content">
+                <strong>CRITICAL ALERT</strong>
+                <span id="alert-message">High risk score (> 0.8) detected!</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS Core -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Leaflet Heatmap Plugin -->
+    <!-- Using a reliable CDN for leaflet-heat -->
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    
+    <!-- Custom JS Application Logic -->
+    <script src="script.js"></script>
+</body>
+</html>

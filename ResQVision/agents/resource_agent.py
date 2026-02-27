@@ -18,7 +18,7 @@ class ResourceAgent:
         "LOW": 0.5,
     }
 
-    def allocate(self, risk_level: str, survivor_count: int, crowd_density: float = 0.0) -> dict:
+    def allocate(self, risk_level: str, survivor_count: int, crowd_density: float = 0.0, fire_risk: bool = False) -> dict:
         """
         Calculate resource requirements.
 
@@ -28,6 +28,10 @@ class ResourceAgent:
             One of LOW / MEDIUM / HIGH / CRITICAL.
         survivor_count : int
             Number of confirmed survivors.
+        crowd_density : float
+            Crowd density ratio 0.0-1.0.
+        fire_risk : bool
+            Whether fire is present.
 
         Returns
         -------
@@ -38,6 +42,9 @@ class ResourceAgent:
                 "medical_units": int,
                 "helicopters": int,
                 "supply_trucks": int,
+                "fire_engines": int,
+                "police_units": int,
+                "crowd_control_staff": int,
                 "total_personnel": int,
                 "risk_multiplier": float,
             }
@@ -52,14 +59,20 @@ class ResourceAgent:
         helicopters = math.ceil(survivors / 8 * mult) if level in ("CRITICAL", "HIGH") else 0
         supply_trucks = math.ceil(survivors / 6 * mult)
         
+        # Fire units
+        fire_engines = 0
+        if fire_risk:
+            # Dispatch at least 2 for any fire, scale up with risk level
+            fire_engines = max(2, math.ceil(survivors / 4 * mult) + (2 if level == "CRITICAL" else 0))
+
         # Autonomous Crowd Management Units
         # Scale based on 0.0-1.0 crowd density ratio
         police_units = math.ceil(crowd_density * 8 * mult) if crowd_density > 0.3 else 0
         crowd_control_staff = math.ceil(crowd_density * 15 * mult) if crowd_density > 0.5 else 0
 
-        # Personnel estimate: ~5 per rescue team + 3 per medical unit + 2 per ambulance 
+        # Personnel estimate: ~5 per rescue team + 3 per medical unit + 2 per ambulance + 4 per fire engine
         # Add police officers (2 per unit) and crowd staff (1 per staff)
-        total_personnel = (rescue_teams * 5) + (medical_units * 3) + (ambulances * 2) + (police_units * 2) + crowd_control_staff
+        total_personnel = (rescue_teams * 5) + (medical_units * 3) + (ambulances * 2) + (fire_engines * 4) + (police_units * 2) + crowd_control_staff
 
         return {
             "ambulances": ambulances,
@@ -67,6 +80,7 @@ class ResourceAgent:
             "medical_units": medical_units,
             "helicopters": helicopters,
             "supply_trucks": supply_trucks,
+            "fire_engines": fire_engines,
             "police_units": police_units,
             "crowd_control_staff": crowd_control_staff,
             "total_personnel": total_personnel,

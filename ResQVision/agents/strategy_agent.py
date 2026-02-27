@@ -17,6 +17,7 @@ class StrategyAgent:
                 "Search & Rescue K-9 units",
                 "Thermal imaging drones",
                 "Hydraulic rescue tools (Jaws of Life)",
+                "High-capacity water cannons and aerial ladder trucks",
                 "Inflatable rescue boats",
                 "Portable medical triage stations",
                 "Night-vision equipment",
@@ -26,6 +27,8 @@ class StrategyAgent:
                 "Activate all available rescue teams",
                 "Deploy aerial reconnaissance drones",
                 "Establish forward command post",
+                "Initiate immediate evacuation of surrounding zones",
+                "Coordinate multi-agency fire and rescue response",
                 "Request military/national guard assistance",
                 "Set up emergency medical triage zone",
                 "Begin systematic grid search pattern",
@@ -36,6 +39,7 @@ class StrategyAgent:
             "priority": "P1 — URGENT",
             "equipment": [
                 "Rescue boats",
+                "Heavy-duty fire response vehicles",
                 "Stretchers and spine boards",
                 "Portable generators",
                 "First-aid kits (advanced)",
@@ -44,6 +48,7 @@ class StrategyAgent:
             ],
             "actions": [
                 "Deploy primary rescue team",
+                "Dispatch dedicated firefighting units",
                 "Launch drone survey of affected area",
                 "Prepare medical evacuation routes",
                 "Set up temporary shelters nearby",
@@ -55,6 +60,7 @@ class StrategyAgent:
             "priority": "P2 — HIGH",
             "equipment": [
                 "Basic rescue tools",
+                "Fire suppression systems (portable extinguishers)",
                 "First-aid kits",
                 "Megaphones and signal flares",
                 "Portable lighting",

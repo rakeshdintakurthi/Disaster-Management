@@ -21,6 +21,7 @@ import folium
 from streamlit_folium import st_folium
 from datetime import datetime
 from collections import deque
+import streamlit.components.v1 as components
 
 # ── Ensure local imports work ────────────────────────────────────────
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -261,6 +262,39 @@ button[kind="primary"]:active {
 
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
+# ── Leaflet Web Dashboard Integration ──────────────────────────────────
+def render_leaflet_map(result=None):
+    """Reads the HTML/CSS/JS for the Leaflet dashboard and embeds it into Streamlit."""
+    base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "REQvision_web")
+    
+    with open(os.path.join(base_dir, "index.html"), "r", encoding="utf-8") as f:
+        html_str = f.read()
+    with open(os.path.join(base_dir, "style.css"), "r", encoding="utf-8") as f:
+        css_str = f.read()
+    with open(os.path.join(base_dir, "script.js"), "r", encoding="utf-8") as f:
+        js_str = f.read()
+
+    # Pass live stream data to the map if available
+    if result:
+        risk_score = result["risk"]["risk_score"] / 100.0
+        crowd_count = result["detection"]["survivor_count"]
+        
+        # Inject script to update the map with the live feed data point
+        injection = f"""
+        setTimeout(() => {{
+            updateDashboardData([
+                {{ name: "Live Camera Feed", lat: 16.5062, lng: 80.6480, crowd: {crowd_count}, riskScore: {risk_score} }}
+            ]);
+        }}, 1000);
+        """
+        js_str += injection
+
+    # Inject the CSS and JS straight into the HTML string
+    html_str = html_str.replace('<link rel="stylesheet" href="style.css">', f"<style>{css_str}</style>")
+    html_str = html_str.replace('<script src="script.js"></script>', f"<script>{js_str}</script>")
+
+    components.html(html_str, height=650)
+
 
 # ═══════════════════════════════════════════════════════════════════════
 # Session state initialisation
@@ -377,7 +411,8 @@ if not st.session_state.running:
     c1, c2, c3 = st.columns(3)
     
     with c1:
-        mode = st.selectbox("Scenario Mode", ["flood", "rubble"], index=0)
+        mode_select = st.selectbox("Scenario Mode", ["flood", "rubble", "fire", "heavy crowd"], index=0)
+        mode = mode_select.replace(" ", "_")
         conf_threshold = st.slider("Detection Confidence", 0.05, 0.9, 0.2, 0.05)
         gemini_api_key = st.text_input("Gemini API Key (Optional)", type="password", help="Enables advanced AI situational awareness.")
         
@@ -623,7 +658,26 @@ if result is not None:
                        "Micro-Motion", color="#2563EB"),
             use_container_width=True, key="gauge_motion",
         )
+        st.markdown('<hr style="margin:0;">', unsafe_allow_html=True)
+        st.plotly_chart(
+            make_gauge(result["crowd"]["occupied_area_ratio"],
+                       "Occupied Area", color="#8B5CF6"),
+            use_container_width=True, key="gauge_crowd",
+        )
+        if mode == "fire":
+            st.markdown('<hr style="margin:0;">', unsafe_allow_html=True)
+            st.plotly_chart(
+                make_gauge(result["fire"]["fire_coverage"],
+                           "Fire Coverage", color="#DC2626"),
+                use_container_width=True, key="gauge_fire",
+            )
         st.markdown('</div>', unsafe_allow_html=True)
+
+    # ── Satellite Map ────────────────────────────────────────────────
+    st.markdown('<div class="section-divider">Satellite & Heatmap Intelligence</div>', unsafe_allow_html=True)
+    st.markdown('<div class="panel" style="padding: 0; overflow: hidden; border-radius: 12px; margin-bottom: 24px;">', unsafe_allow_html=True)
+    render_leaflet_map(result)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # ── Timeline charts ──────────────────────────────────────────────
     st.markdown('<div class="section-divider">Telemetry Logs</div>', unsafe_allow_html=True)
@@ -697,6 +751,10 @@ if result is not None:
                     <div style="font-size: 1.8rem; color: #0F172A; font-weight: 700;">{res["medical_units"]}</div>
                 </div>
                 <div>
+                    <div style="font-size: 0.85rem; color: #DC2626; font-weight: 500; text-transform: uppercase;">Fire Engines</div>
+                    <div style="font-size: 1.8rem; color: #0F172A; font-weight: 700;">{res["fire_engines"]}</div>
+                </div>
+                <div>
                     <div style="font-size: 0.85rem; color: #475569; font-weight: 500; text-transform: uppercase;">Police Units</div>
                     <div style="font-size: 1.8rem; color: #0F172A; font-weight: 700;">{res["police_units"]}</div>
                 </div>
@@ -711,6 +769,23 @@ if result is not None:
             </div>
         </div>
         ''', unsafe_allow_html=True)
+
+    # ── Crowd Management Panel ─────────────────────────────────────────
+    st.markdown('<div class="section-divider">Crowd Management</div>', unsafe_allow_html=True)
+    c_m1, c_m2, c_m3 = st.columns([1, 1, 1])
+    
+    with c_m1:
+        st.markdown(metric_card("Autonomous Police Units", 
+                                res["police_units"], "#8B5CF6", sublabel="Calculated from Crowd Density"), 
+                    unsafe_allow_html=True)
+    with c_m2:
+        st.markdown(metric_card("Crowd Control Staff", 
+                                res["crowd_control_staff"], "#8B5CF6", sublabel="Calculated from Crowd Density"), 
+                    unsafe_allow_html=True)
+    with c_m3:
+        st.markdown(metric_card("Area Occupied Ratio", 
+                                f"{result['crowd']['occupied_area_ratio']:.1%}", "#8B5CF6", sublabel="Space utilized vs frame size"), 
+                    unsafe_allow_html=True)
 
     # ── Map & Report Container ─────────────────────────────────────────
     st.markdown('<div class="section-divider">Incident Mapping & Reporting</div>', unsafe_allow_html=True)
@@ -778,14 +853,17 @@ if result is not None:
             df_log = pd.read_csv(csv_path)
             st.dataframe(df_log.tail(50), use_container_width=True, height=250)
 
-    # ── Dispatch Rescue button ───────────────────────────────────────
+    # ── Dispatch Rescue buttons ───────────────────────────────────────
     st.markdown("---")
-    dcol1, dcol2, dcol3 = st.columns([2, 1, 2])
-    with dcol2:
+    res = result['resources']
+    dcol1, dcol2, dcol3 = st.columns([1, 1, 1])
+
+    with dcol1:
         if st.button("🚁 DISPATCH RESCUE", type="primary", use_container_width=True):
+            if "dispatch_count" not in st.session_state:
+                st.session_state.dispatch_count = 0
             st.session_state.dispatch_count += 1
             st.balloons()
-            res = result['resources']
             st.success(f"""
 **✅ Rescue Team #{st.session_state.dispatch_count} Dispatched Successfully!**
 
@@ -793,12 +871,33 @@ The alert and deployment payload was sent to the following units:
 - **Ambulances**: {res['ambulances']}
 - **Helicopters**: {res['helicopters']}
 - **Rescue Teams**: {res['rescue_teams']}
+- **Fire Engines**: {res['fire_engines']}
 - **Supply Trucks**: {res['supply_trucks']}
 - **Medical Units**: {res['medical_units']}
-- **Personnel**: {res['total_personnel']}
+- **Total Personnel**: {res['total_personnel']}
 
 *Estimated Time of Arrival (ETA): 15 minutes.*
             """)
+
+    with dcol3:
+        if st.button("🚨 DISPATCH CROWD CONTROL", type="primary", use_container_width=True):
+            if res['police_units'] == 0 and res['crowd_control_staff'] == 0:
+                st.warning("No crowd control resources currently required.")
+            else:
+                if "crowd_dispatch_count" not in st.session_state:
+                    st.session_state.crowd_dispatch_count = 0
+                st.session_state.crowd_dispatch_count += 1
+                st.snow()
+                st.success(f"""
+**✅ Crowd Management Team #{st.session_state.crowd_dispatch_count} Dispatched!**
+
+Deployment payload sent to the following units to stabilize the scene:
+- **Autonomous Police Units**: {res['police_units']}
+- **Crowd Control Staff**: {res['crowd_control_staff']}
+- **Area Coverage Needed**: {result['crowd']['occupied_area_ratio']:.1%}
+
+*Estimated Time of Arrival (ETA): 5-10 minutes.*
+                """)
 
     # ── Auto-rerun for live feed ─────────────────────────────────────
     if st.session_state.running and not st.session_state.paused:

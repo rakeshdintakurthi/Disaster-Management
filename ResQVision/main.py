@@ -26,6 +26,7 @@ from preprocessing import FramePreprocessor
 from detection_engine import DetectionEngine
 from flood_mode import FloodDetector
 from rubble_mode import RubbleDetector
+from fire_mode import FireDetector
 from crowd_monitor import CrowdMonitor
 from micro_motion import MicroMotionDetector
 from breathing_analysis import BreathingAnalyzer
@@ -62,6 +63,7 @@ class ResQVisionPipeline:
         self.detector = DetectionEngine(log_dir=log_dir)
         self.flood_detector = FloodDetector()
         self.rubble_detector = RubbleDetector()
+        self.fire_detector = FireDetector()
         self.crowd_monitor = CrowdMonitor()
         self.motion_detector = MicroMotionDetector()
         self.breathing_analyzer = BreathingAnalyzer()
@@ -106,11 +108,14 @@ class ResQVisionPipeline:
                         "flood_line_y": 0, "water_mask": np.zeros(frame.shape[:2], dtype=np.uint8)}
         rubble_result = {"rubble_zones": [], "trapped_survivors": [],
                          "rubble_coverage": 0.0, "rubble_mask": np.zeros(frame.shape[:2], dtype=np.uint8)}
+        fire_result = {"fire_risk": False, "fire_coverage": 0.0, "fire_mask": np.zeros(frame.shape[:2], dtype=np.uint8)}
 
         if self.mode == "flood":
             flood_result = self.flood_detector.detect(frame)
         elif self.mode == "rubble":
             rubble_result = self.rubble_detector.detect(frame, det["bboxes"])
+        elif self.mode == "fire":
+            fire_result = self.fire_detector.detect(frame)
 
         # 4 — Crowd density
         crowd = self.crowd_monitor.estimate(det["bboxes"], frame_shape=frame.shape, frame=frame)
@@ -127,7 +132,10 @@ class ResQVisionPipeline:
             "confidence_score": det["confidence_score"],
             "flood_risk": flood_result["flood_risk"],
             "water_coverage": flood_result["water_coverage"],
+            "fire_risk": fire_result["fire_risk"],
+            "fire_coverage": fire_result["fire_coverage"],
             "crowd_density": crowd["crowd_density"],
+            "is_heavy_crowd_mode": self.mode == "heavy_crowd",
             "micro_motion_confidence": motion["micro_motion_confidence"],
         }
 
@@ -139,7 +147,7 @@ class ResQVisionPipeline:
 
         # 9 — Resource Agent
         resources = self.resource_agent.allocate(
-            risk["risk_level"], det["survivor_count"], crowd["crowd_density"]
+            risk["risk_level"], det["survivor_count"], crowd["crowd_density"], fire_result["fire_risk"]
         )
 
         # 10 — Report Agent (generate every 100 frames or when risk changes)
@@ -153,6 +161,7 @@ class ResQVisionPipeline:
                 resources=resources,
                 confidence_score=det["confidence_score"],
                 flood_risk=flood_result["flood_risk"],
+                fire_risk=fire_result["fire_risk"],
                 micro_motion_confidence=motion["micro_motion_confidence"],
                 breathing_confidence=breathing["breathing_confidence"],
             )
@@ -163,6 +172,12 @@ class ResQVisionPipeline:
             annotated = self.flood_detector.draw_overlay(annotated, flood_result)
         elif self.mode == "rubble":
             annotated = self.rubble_detector.draw_overlay(annotated, rubble_result)
+        elif self.mode == "fire":
+            annotated = self.fire_detector.draw_overlay(annotated, fire_result)
+        elif self.mode == "heavy_crowd":
+            if crowd["crowd_density"] > 0.4:
+                cv2.rectangle(annotated, (0, 0), (annotated.shape[1], annotated.shape[0]), (0, 0, 255), 6)
+                cv2.putText(annotated, "SEVERE CROWD CRUSH RISK", (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
         # 11 — Gemini AI Analysis (Throttle to every 30 frames for video, or every frame for photo)
         gemini_result = {
@@ -187,6 +202,7 @@ class ResQVisionPipeline:
             "detection": det,
             "flood": flood_result,
             "rubble": rubble_result,
+            "fire": fire_result,
             "crowd": crowd,
             "motion": motion,
             "breathing": breathing,
@@ -210,7 +226,7 @@ def main():
     parser.add_argument("--source", type=str, default="0",
                         help="Video source: 0 for webcam, or path to video file")
     parser.add_argument("--mode", type=str, default="flood",
-                        choices=["flood", "rubble"],
+                        choices=["flood", "rubble", "fire", "heavy_crowd"],
                         help="Scenario mode")
     args = parser.parse_args()
 
